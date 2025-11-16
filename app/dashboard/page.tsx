@@ -1,18 +1,33 @@
-import { ChartAreaInteractive } from "@//components/chart-area-interactive"
-import { DataTable } from "@//components/data-table"
-import { SectionCards } from "@//components/section-cards"
-import data from "@/app/dashboard/data.json"
+import { Suspense } from 'react'
+import { InterviewCards } from '@/components/interview-cards'
+import { RecentSubmissions } from '@/components/recent-submissions'
+import { AnalyticsOverview } from '@/components/analytics-overview'
+import { DashboardSkeleton } from '@/components/dashboard-skeleton'
 
-export default function Page() {
+export default function DashboardPage() {
   return (
-    <div className="@container/main flex flex-1 flex-col gap-2">
-      <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-        <SectionCards />
-        <div className="px-4 lg:px-6">
-          <ChartAreaInteractive />
+    <div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Welcome to RasproView AI - Manage your video interviews and analyze candidate responses
+          </p>
         </div>
-        <DataTable data={data} />
       </div>
+
+      <Suspense fallback={<DashboardSkeleton />}>
+        <div className="grid gap-6">
+          {/* Interview Overview Cards */}
+          <InterviewCards />
+
+          {/* Analytics Overview */}
+          <AnalyticsOverview />
+
+          {/* Recent Submissions Table */}
+          <RecentSubmissions />
+        </div>
+      </Suspense>
     </div>
   )
 }

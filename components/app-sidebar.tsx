@@ -19,6 +19,10 @@ import {
   IconSearch,
   IconSettings,
   IconUsers,
+  IconVideo,
+  IconUserCircle,
+  IconBrain,
+  IconSettingsAutomation,
 } from "@tabler/icons-react"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -39,74 +43,86 @@ const staticData = {
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: "/dashboard",
       icon: IconDashboard,
     },
     {
-      title: "Lifecycle",
-      url: "#",
-      icon: IconListDetails,
+      title: "Interviews",
+      url: "/dashboard/interviews",
+      icon: IconVideo,
+    },
+    {
+      title: "Candidates",
+      url: "/dashboard/candidates",
+      icon: IconUserCircle,
+    },
+    {
+      title: "AI Analysis",
+      url: "/dashboard/analysis",
+      icon: IconBrain,
     },
     {
       title: "Analytics",
-      url: "#",
+      url: "/dashboard/analytics",
       icon: IconChartBar,
-    },
-    {
-      title: "Projects",
-      url: "#",
-      icon: IconFolder,
-    },
-    {
-      title: "Team",
-      url: "#",
-      icon: IconUsers,
     },
   ],
   navClouds: [
     {
-      title: "Capture",
-      icon: IconCamera,
+      title: "Interviews",
+      icon: IconVideo,
       isActive: true,
-      url: "#",
+      url: "/dashboard/interviews",
       items: [
         {
-          title: "Active Proposals",
-          url: "#",
+          title: "All Interviews",
+          url: "/dashboard/interviews",
         },
         {
-          title: "Archived",
-          url: "#",
+          title: "Create Interview",
+          url: "/dashboard/interviews/create",
+        },
+        {
+          title: "Templates",
+          url: "/dashboard/interviews/templates",
         },
       ],
     },
     {
-      title: "Proposal",
+      title: "Submissions",
       icon: IconFileDescription,
-      url: "#",
+      url: "/dashboard/submissions",
       items: [
         {
-          title: "Active Proposals",
-          url: "#",
+          title: "Recent",
+          url: "/dashboard/submissions",
         },
         {
-          title: "Archived",
-          url: "#",
+          title: "Reviewed",
+          url: "/dashboard/submissions?status=reviewed",
+        },
+        {
+          title: "Pending",
+          url: "/dashboard/submissions?status=pending",
         },
       ],
     },
     {
-      title: "Prompts",
+      title: "AI Screening",
       icon: IconFileAi,
-      url: "#",
+      url: "/dashboard/ai-screening",
       items: [
         {
-          title: "Active Proposals",
-          url: "#",
+          title: "Analysis Queue",
+          url: "/dashboard/analysis/queue",
         },
         {
-          title: "Archived",
-          url: "#",
+          title: "Results",
+          url: "/dashboard/analysis/results",
+        },
+        {
+          title: "Settings",
+          url: "/dashboard/analysis/settings",
         },
       ],
     },
@@ -114,34 +130,34 @@ const staticData = {
   navSecondary: [
     {
       title: "Settings",
-      url: "#",
+      url: "/dashboard/settings",
       icon: IconSettings,
     },
     {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
+      title: "Automation",
+      url: "/dashboard/automation",
+      icon: IconSettingsAutomation,
     },
     {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
+      title: "Get Help",
+      url: "/dashboard/help",
+      icon: IconHelp,
     },
   ],
   documents: [
     {
-      name: "Data Library",
-      url: "#",
-      icon: IconDatabase,
+      name: "Candidate Database",
+      url: "/dashboard/candidates",
+      icon: IconUserCircle,
     },
     {
       name: "Reports",
-      url: "#",
+      url: "/dashboard/reports",
       icon: IconReport,
     },
     {
-      name: "Word Assistant",
-      url: "#",
+      name: "API Docs",
+      url: "/dashboard/docs",
       icon: IconFileWord,
     },
   ],
@@ -169,9 +185,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <Link href="/">
-                <Image src="/codeguide-logo.png" alt="CodeGuide" width={32} height={32} className="rounded-lg" />
-                <span className="text-base font-semibold font-parkinsans">CodeGuide</span>
+              <Link href="/dashboard">
+                <Image src="/rasproview-logo.png" alt="RasproView AI" width={32} height={32} className="rounded-lg" />
+                <span className="text-base font-semibold font-parkinsans">RasproView AI</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
