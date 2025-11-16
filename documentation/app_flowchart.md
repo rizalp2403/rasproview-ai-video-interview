@@ -1,14 +1,20 @@
 flowchart TD
-  Start[Landing Page]
-  SignUpPage[Sign Up Page]
-  SignInPage[Sign In Page]
-  AuthAPI[Authentication API Endpoint]
-  DashboardPage[Dashboard Page]
-  Start -->|Select Sign Up| SignUpPage
-  Start -->|Select Sign In| SignInPage
-  SignUpPage -->|Submit Credentials| AuthAPI
-  SignInPage -->|Submit Credentials| AuthAPI
-  AuthAPI -->|Success| DashboardPage
-  AuthAPI -->|Error| SignUpPage
-  AuthAPI -->|Error| SignInPage
-  DashboardPage -->|Click Logout| Start
+    A[Landing Page] --> B{Authenticated?}
+    B -->|No| C[Sign In Page]
+    B -->|No| D[Sign Up Page]
+    C --> E[Auth Success]
+    D --> E[Auth Success]
+    E --> F{User Role}
+    F -->|Recruiter| G[Recruiter Dashboard]
+    F -->|Candidate| H[Candidate Dashboard]
+    G --> I[Create Interview]
+    I --> J[Invite Candidate]
+    J --> K[Send Invitation]
+    G --> L[View Submissions]
+    L --> M[View AI Analysis]
+    H --> N[View Invitations]
+    N --> O[Take Interview]
+    O --> P[Video Recorder]
+    P --> Q[Submit Video]
+    Q --> R[Upload Success]
+    R --> S[Thank You]

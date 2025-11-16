@@ -1,116 +1,142 @@
-# Security Guidelines for codeguide-starter
+# RasproView AI Security Guidelines
 
-This document defines mandatory security principles and implementation best practices tailored to the **codeguide-starter** repository. It aligns with Security-by-Design, Least Privilege, Defense-in-Depth, and other core security tenets. All sections reference specific areas of the codebase (e.g., `/app/api/auth/route.ts`, CSS files, environment configuration) to ensure practical guidance.
-
----
-
-## 1. Security by Design
-
-• Embed security from day one: review threat models whenever adding new features (e.g., new API routes, data fetching).
-• Apply “secure defaults” in Next.js configuration (`next.config.js`), enabling strict mode and disabling debug flags in production builds.
-• Maintain a security checklist in your PR template to confirm that each change has been reviewed against this guideline.
+This document provides prescriptive security best practices tailored to the **rasproview-ai-video-interview** codebase. It aligns with core security principles—Security by Design, Defense in Depth, Least Privilege—and covers authentication, data protection, API security, infrastructure hardening, and dependency management.
 
 ---
+## 1. Security by Design & Secure Defaults
 
+- Embed security considerations at every layer from day one.  
+- Enable secure settings by default:  
+  - Disable verbose error messages in production.  
+  - Enforce HTTPS (TLS 1.2+) for all endpoints.  
+- Conduct regular threat modeling sessions as features (e.g., video upload, AI analysis) are added.
+
+---
 ## 2. Authentication & Access Control
 
-### 2.1 Password Storage
-- Use **bcrypt** (or Argon2) with a per-user salt to hash passwords in `/app/api/auth/route.ts`.
-- Enforce a strong password policy on both client and server: minimum 12 characters, mixed case, numbers, and symbols.
+### 2.1 Robust Authentication
+- Continue using **Better Auth** for role-based sign-in flows.  
+- Enforce strong password policies: minimum length, complexity, rotation.  
+- Store passwords with Argon2 or bcrypt + per-user salt.
 
 ### 2.2 Session Management
-- Issue sessions via Secure, HttpOnly, SameSite=strict cookies. Do **not** expose tokens to JavaScript.
-- Implement absolute and idle timeouts. For example, invalidate sessions after 30 minutes of inactivity.
-- Protect against session fixation by regenerating session IDs after authentication.
+- Use secure, HttpOnly, SameSite=Strict cookies for session tokens.  
+- Enforce idle logout (e.g., 15 minutes) and absolute session expiry (e.g., 24 hours).  
+- Protect against session fixation by regenerating session IDs on privilege changes.
 
-### 2.3 Brute-Force & Rate Limiting
-- Apply rate limiting at the API layer (e.g., using `express-rate-limit` or Next.js middleware) on `/api/auth` to throttle repeated login attempts.
-- Introduce exponential backoff or temporary lockout after N failed attempts.
+### 2.3 Role-Based Access Control (RBAC)
+- Define explicit roles: `candidate`, `recruiter`, `admin`.  
+- Enforce server-side authorization on all API routes (`/app/api/**`).  
+- Restrict queries so candidates can only access their own interviews; recruiters only their organization’s data.
 
-### 2.4 Role-Based Access Control (Future)
-- Define user roles in your database model (e.g., `role = 'user' | 'admin'`).
-- Enforce server-side authorization checks in every protected route (e.g., in `dashboard/layout.tsx` loader functions).
-
----
-
-## 3. Input Handling & Processing
-
-### 3.1 Validate & Sanitize All Inputs
-- On **client** (`sign-up/page.tsx`, `sign-in/page.tsx`): perform basic format checks (email regex, password length).
-- On **server** (`/app/api/auth/route.ts`): re-validate inputs with a schema validator (e.g., `zod`, `Joi`).
-- Reject or sanitize any unexpected fields to prevent injection attacks.
-
-### 3.2 Prevent Injection
-- If you introduce a database later, always use parameterized queries or an ORM (e.g., Prisma) rather than string concatenation.
-- Avoid dynamic `eval()` or template rendering with unsanitized user input.
-
-### 3.3 Safe Redirects
-- When redirecting after login or logout, validate the target against an allow-list to prevent open redirects.
+### 2.4 Multi-Factor Authentication (MFA)
+- Offer optional TOTP or SMS-based MFA for recruiter accounts.  
+- Store MFA secrets securely in a vault, not in environment variables.
 
 ---
+## 3. Input Handling & File Upload Security
 
+### 3.1 Prevent Injection
+- Use Drizzle ORM’s parameterized queries exclusively; avoid raw SQL.  
+- Validate and sanitize all JSON inputs with a schema library (e.g., Zod).
+
+### 3.2 Video File Validation
+- Enforce server-side checks on video format (e.g., MP4), duration (e.g., ≤ 15 minutes), and size (e.g., ≤ 200 MB).  
+- Reject files containing embedded scripts or non-media payloads.  
+- Store uploads outside webroot; use signed URLs (AWS S3 presigned PUT) with least-privilege IAM roles.
+
+### 3.3 Path Traversal & Filename Sanitization
+- Generate deterministic, random object keys for storage (UUID).  
+- Never use user-supplied filenames to build file paths.
+
+### 3.4 Malware Scanning
+- Integrate a virus/malware scanner (e.g., ClamAV or third-party) in the upload pipeline before processing.
+
+---
 ## 4. Data Protection & Privacy
 
-### 4.1 Encryption & Secrets
-- Enforce HTTPS/TLS 1.2+ for all front-end ↔ back-end communications.
-- Never commit secrets—use environment variables and a secrets manager (e.g., AWS Secrets Manager, Vault).
+### 4.1 Encryption
+- Enforce TLS 1.2+ for all client–server and inter-service communications.  
+- Enable transparent data encryption for PostgreSQL at rest.  
+- Encrypt sensitive fields (e.g., PII) in the database using AES-256.
 
-### 4.2 Sensitive Data Handling
-- Do ​not​ log raw passwords, tokens, or PII in server logs. Mask or redact any user identifiers.
-- If storing PII in `data.json` or a future database, classify it and apply data retention policies.
+### 4.2 Secrets Management
+- Remove hardcoded secrets; use a dedicated secrets manager (AWS Secrets Manager, HashiCorp Vault).  
+- Mount secrets at runtime via environment or volume, not in source or Docker images.
+
+### 4.3 Logging & Monitoring
+- Strip PII from logs; log only anonymized user IDs.  
+- Monitor authentication failures and video upload errors for anomaly detection.
+
+### 4.4 Privacy Compliance
+- Provide data deletion workflows (GDPR Right to Erasure) for candidate records.  
+- Display a clear privacy policy outlining how video/analysis data is used and stored.
 
 ---
-
 ## 5. API & Service Security
 
-### 5.1 HTTPS Enforcement
-- In production, redirect all HTTP traffic to HTTPS (e.g., via Vercel’s redirect rules or custom middleware).
+### 5.1 HTTPS & CORS
+- Enforce HTTPS redirect at the edge (Vercel or custom load balancer).  
+- Configure CORS to allow only trusted origins (e.g., `https://app.rasproview.ai`).
 
-### 5.2 CORS
-- Configure `next.config.js` or API middleware to allow **only** your front-end origin (e.g., `https://your-domain.com`).
+### 5.2 Rate Limiting & Throttling
+- Apply per-IP and per-user rate limits on public endpoints (login, video upload) using a middleware (e.g., rate-limiter-flexible).
 
-### 5.3 API Versioning & Minimal Exposure
-- Version your API routes (e.g., `/api/v1/auth`) to handle future changes without breaking clients.
-- Return only necessary fields in JSON responses; avoid leaking internal server paths or stack traces.
+### 5.3 Versioning & Verb Use
+- Version all AI and interview endpoints (`/api/v1/interviews/...`).  
+- Use appropriate HTTP verbs: GET for reads, POST for creations, PUT/PATCH for updates, DELETE for removals.
+
+### 5.4 Minimal Data Exposure
+- Return only necessary fields (avoid including internal IDs or debugging info).  
+- Implement response schemas to whitelist allowed properties.
 
 ---
-
 ## 6. Web Application Security Hygiene
 
-### 6.1 CSRF Protection
-- Use anti-CSRF tokens for any state-changing API calls. Integrate Next.js CSRF middleware or implement synchronizer tokens stored in cookies.
+- Enable and configure security headers:  
+  - Content-Security-Policy: restrict scripts, styles, frame-ancestors.  
+  - X-Frame-Options: DENY.  
+  - X-Content-Type-Options: nosniff.  
+  - Referrer-Policy: strict-origin-when-cross-origin.
 
-### 6.2 Security Headers
-- In `next.config.js` (or a custom server), add these headers:
-  - `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
-  - `X-Content-Type-Options: nosniff`
-  - `X-Frame-Options: DENY`
-  - `Referrer-Policy: no-referrer-when-downgrade`
-  - `Content-Security-Policy`: restrict script/style/src to self and trusted CDNs.
-
-### 6.3 Secure Cookies
-- Set `Secure`, `HttpOnly`, `SameSite=Strict` on all cookies. Avoid storing sensitive data in `localStorage`.
-
-### 6.4 Prevent XSS
-- Escape or encode all user-supplied data in React templates. Avoid `dangerouslySetInnerHTML` unless content is sanitized.
+- Protect against CSRF: implement synchronizer tokens for state-changing requests.  
+- Use Subresource Integrity (SRI) for any third-party scripts.
 
 ---
-
 ## 7. Infrastructure & Configuration Management
 
-- Harden your hosting environment (e.g., Vercel/Netlify) by disabling unnecessary endpoints (GraphQL/GraphiQL playgrounds in production).
-- Rotate secrets and API keys regularly via your secrets manager.
-- Maintain minimal privileges: e.g., database accounts should only have read/write on required tables.
-- Keep Node.js, Next.js, and all system packages up to date.
+- Harden Docker images:  
+  - Use minimal base images (e.g., `node:alpine`).  
+  - Remove build-time tools in final images.  
+  - Run processes as non-root user.
+
+- Secure `docker-compose.yaml`:  
+  - Do not commit `.env` files.  
+  - Reference secrets via Docker Secrets or external vault.
+
+- Disable debug flags and verbose logging in production.  
+- Regularly patch OS, Node.js, dependencies.
 
 ---
-
 ## 8. Dependency Management
 
-- Commit and maintain `package-lock.json` to guarantee reproducible builds.
-- Integrate a vulnerability scanner (e.g., GitHub Dependabot, Snyk) to monitor and alert on CVEs in dependencies.
-- Trim unused packages; each added library increases the attack surface.
+- Maintain lockfiles (`package-lock.json`) and enforce `npm ci` for reproducible builds.  
+- Integrate SCA tooling (e.g., GitHub Dependabot, Snyk) to detect vulnerable packages.  
+- Remove unused dependencies to reduce attack surface.
 
 ---
+## 9. Continuous Integration & Deployment
 
-Adherence to these guidelines will ensure that **codeguide-starter** remains secure, maintainable, and resilient as it evolves. Regularly review and update this document to reflect new threats and best practices.
+- Run linters, type checks, and automated security scans in CI (GitHub Actions).  
+- Automate end-to-end tests (Playwright or Cypress) to validate secure flows:  
+  - Authentication, video upload, AI analysis pipeline.  
+- Deploy only from tagged commits; enforce branch protection rules.
+
+---
+## 10. Ongoing Security Practices
+
+- Schedule periodic penetration tests and vulnerability assessments.  
+- Conduct code reviews with a focus on security implications.  
+- Train the team on emerging threats (e.g., supply-chain attacks).
+
+By following these guidelines, the RasproView AI platform will maintain a robust security posture as it evolves from this starter template into a production-grade, AI-powered video interviewing solution.
